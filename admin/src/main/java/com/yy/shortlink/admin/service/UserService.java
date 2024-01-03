@@ -7,6 +7,7 @@ import com.yy.shortlink.admin.dto.req.UserLoginReqDto;
 import com.yy.shortlink.admin.dto.req.UserRegisterReqDto;
 import com.yy.shortlink.admin.dto.req.UserUpdateReqDto;
 import com.yy.shortlink.admin.dto.resp.UserInfoDTO;
+import com.yy.shortlink.admin.dto.resp.UserLoginRespDto;
 import com.yy.shortlink.admin.dto.resp.UserRespDto;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -22,7 +23,7 @@ public interface UserService extends IService<UserDO> {
 
     void update(UserUpdateReqDto requestParam);
 
-    UserInfoDTO login(UserLoginReqDto requestParam);
+    UserLoginRespDto login(UserLoginReqDto requestParam);
 
     Boolean checkLogin(String username,String token);
 

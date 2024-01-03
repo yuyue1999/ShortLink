@@ -21,6 +21,10 @@ public enum BaseErrorCode implements IErrorCode {
 
     USER_LOGIN_FAILURE("A000122","User login failed"),
 
+    USER_TOKEN_FAIL("A000123","User token failed"),
+
+    USER_HAS_LOGIN("A000124","User has login"),
+
     USER_NOT_LOGIN("A000140","User not login"),
     PHONE_VERIFY_ERROR("A000151", "手机格式校验失败"),
 

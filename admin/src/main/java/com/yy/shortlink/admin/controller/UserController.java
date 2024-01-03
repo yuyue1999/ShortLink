@@ -7,6 +7,7 @@ import com.yy.shortlink.admin.dto.req.UserLoginReqDto;
 import com.yy.shortlink.admin.dto.req.UserRegisterReqDto;
 import com.yy.shortlink.admin.dto.req.UserUpdateReqDto;
 import com.yy.shortlink.admin.dto.resp.UserInfoDTO;
+import com.yy.shortlink.admin.dto.resp.UserLoginRespDto;
 import com.yy.shortlink.admin.dto.resp.UserRespDto;
 import com.yy.shortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +39,8 @@ public class UserController {
         return Results.success();
     }
     @PostMapping("api/short-link/v1/user/login")
-    public Result<UserInfoDTO> login(@RequestBody UserLoginReqDto requestParam){
-        userService.login(requestParam);
-        return null;
+    public Result<UserLoginRespDto> login(@RequestBody UserLoginReqDto requestParam){
+        return Results.success(userService.login(requestParam));
     }
     @DeleteMapping("api/short-link/v1/user/logout")
     public Result<Void> logout(@RequestParam("username") String username, @RequestParam String token){

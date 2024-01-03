@@ -12,7 +12,8 @@ import com.yy.shortlink.admin.dao.mapper.UserMapper;
 import com.yy.shortlink.admin.dto.req.UserLoginReqDto;
 import com.yy.shortlink.admin.dto.req.UserRegisterReqDto;
 import com.yy.shortlink.admin.dto.req.UserUpdateReqDto;
-import com.yy.shortlink.admin.dto.resp.UserInfoDTO;
+
+import com.yy.shortlink.admin.dto.resp.UserLoginRespDto;
 import com.yy.shortlink.admin.dto.resp.UserRespDto;
 import com.yy.shortlink.admin.service.UserService;
 import com.yy.shortlink.admin.common.convention.exception.ClientException;
@@ -90,22 +91,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
-    public UserInfoDTO login(UserLoginReqDto requestParam) {
-        LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername,requestParam.getUsername())
+    public UserLoginRespDto login(UserLoginReqDto requestParam) {
+        LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
+                .eq(UserDO::getUsername,requestParam.getUsername())
                 .eq(UserDO::getPassword,requestParam.getPassword())
                 .eq(UserDO::getDelFlag,0);
         UserDO userDO = baseMapper.selectOne(queryWrapper);
         if (userDO == null){
             throw new ClientException(BaseErrorCode.USER_LOGIN_FAILURE);
         }
+
+        Boolean hasLogin = stringRedisTemplate.hasKey("login_" + requestParam.getUsername());
+        if(hasLogin!=null && hasLogin){
+            throw new ClientException(BaseErrorCode.USER_HAS_LOGIN);
+        }
+
+
         String uuid = UUID.randomUUID().toString();
-        stringRedisTemplate.opsForValue().set(uuid, JSON.toJSONString(userDO),30L, TimeUnit.MINUTES);
-        return null;
+        stringRedisTemplate.opsForHash().put("login_" + requestParam.getUsername(),uuid,JSON.toJSONString(userDO));
+        stringRedisTemplate.expire("login_" + requestParam.getUsername(), 30L,TimeUnit.MINUTES);
+        return new UserLoginRespDto(uuid);
     }
 
     @Override
     public Boolean checkLogin(String username, String token) {
-        return stringRedisTemplate.opsForValue().get(token) !=null;
+        return stringRedisTemplate.opsForHash().get("login_"+username,token)!=null;
     }
 
     @Override
@@ -113,6 +123,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (!checkLogin(username,token)){
             throw new ClientException(BaseErrorCode.USER_NOT_LOGIN);
         }
-        stringRedisTemplate.delete(token);
+        stringRedisTemplate.delete("login_"+username);
     }
 }
