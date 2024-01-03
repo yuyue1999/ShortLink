@@ -1,24 +1,33 @@
 package com.yy.shortlink.admin.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yy.shortlink.admin.common.convention.errorcode.BaseErrorCode;
 import com.yy.shortlink.admin.dao.entity.UserDO;
 import com.yy.shortlink.admin.dao.mapper.UserMapper;
+import com.yy.shortlink.admin.dto.req.UserLoginReqDto;
 import com.yy.shortlink.admin.dto.req.UserRegisterReqDto;
+import com.yy.shortlink.admin.dto.req.UserUpdateReqDto;
+import com.yy.shortlink.admin.dto.resp.UserInfoDTO;
 import com.yy.shortlink.admin.dto.resp.UserRespDto;
 import com.yy.shortlink.admin.service.UserService;
 import com.yy.shortlink.admin.common.convention.exception.ClientException;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static com.yy.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 
@@ -29,6 +38,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
 
     private final RedissonClient redissonClient;
+
+    private final StringRedisTemplate stringRedisTemplate;
     @Override
     public UserRespDto getUserbyUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername,username);
@@ -68,5 +79,40 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             lock.unlock();
         }
 
+    }
+
+    @Override
+    public void update(UserUpdateReqDto requestParam) {
+        // TODO is login or not
+        // TODO: Redis and divided tables
+        LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class).eq(UserDO::getUsername,requestParam.getUsername());
+        baseMapper.update(BeanUtil.toBean(requestParam,UserDO.class),updateWrapper);
+    }
+
+    @Override
+    public UserInfoDTO login(UserLoginReqDto requestParam) {
+        LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername,requestParam.getUsername())
+                .eq(UserDO::getPassword,requestParam.getPassword())
+                .eq(UserDO::getDelFlag,0);
+        UserDO userDO = baseMapper.selectOne(queryWrapper);
+        if (userDO == null){
+            throw new ClientException(BaseErrorCode.USER_LOGIN_FAILURE);
+        }
+        String uuid = UUID.randomUUID().toString();
+        stringRedisTemplate.opsForValue().set(uuid, JSON.toJSONString(userDO),30L, TimeUnit.MINUTES);
+        return null;
+    }
+
+    @Override
+    public Boolean checkLogin(String username, String token) {
+        return stringRedisTemplate.opsForValue().get(token) !=null;
+    }
+
+    @Override
+    public void logout(String username, String token) {
+        if (!checkLogin(username,token)){
+            throw new ClientException(BaseErrorCode.USER_NOT_LOGIN);
+        }
+        stringRedisTemplate.delete(token);
     }
 }

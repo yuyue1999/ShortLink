@@ -18,6 +18,10 @@ public enum BaseErrorCode implements IErrorCode {
     USER_SAVE_FAILED("A000114", "Insert new user failed"),
     PASSWORD_VERIFY_ERROR("A000120", "密码校验失败"),
     PASSWORD_SHORT_ERROR("A000121", "密码长度不够"),
+
+    USER_LOGIN_FAILURE("A000122","User login failed"),
+
+    USER_NOT_LOGIN("A000140","User not login"),
     PHONE_VERIFY_ERROR("A000151", "手机格式校验失败"),
 
     // ========== 二级宏观错误码 系统请求缺少幂等Token ==========
