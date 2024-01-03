@@ -1,24 +1,11 @@
-package com.yy.shortlink.project.dao.entity;
+package com.yy.shortlink.project.dto.resp;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.yy.shortlink.project.common.database.BaseDO;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-
-import java.io.Serializable;
 import java.util.Date;
-
 @Data
-@Builder
-@TableName("t_link")
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShortLinkDo extends BaseDO {
-
+public class ShortLinkPageRespDTO {
 
     /**
      * id
@@ -49,11 +36,6 @@ public class ShortLinkDo extends BaseDO {
 
     private String originUrl;
 
-    /**
-     * 点击量
-     */
-
-    private Integer clickNum;
 
     /**
      * 分组标识
@@ -85,12 +67,7 @@ public class ShortLinkDo extends BaseDO {
 
     private Date validDate;
 
-    /**
-     * 描述
-     */
-    @TableField("`describe`")
-    private String describe;
+
 
     private String favicon;
-
 }
