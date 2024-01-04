@@ -6,6 +6,7 @@ import com.yy.shortlink.project.common.convention.result.Result;
 import com.yy.shortlink.project.dao.entity.ShortLinkDo;
 import com.yy.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.yy.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.yy.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCountQueryRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -20,4 +21,6 @@ public interface ShortLinkService extends IService<ShortLinkDo> {
     public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam);
 
     List<ShortLinkCountQueryRespDTO> listGroupShortLinkCount(List<String> requestParam);
+
+    void updateShortLink(ShortLinkUpdateReqDTO requestParam);
 }

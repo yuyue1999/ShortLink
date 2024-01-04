@@ -3,19 +3,24 @@ package com.yy.shortlink.project.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yy.shortlink.project.common.convention.exception.ClientException;
 import com.yy.shortlink.project.common.convention.exception.ServiceException;
+import com.yy.shortlink.project.common.enums.ValidDateTypeEnum;
 import com.yy.shortlink.project.dao.entity.ShortLinkDo;
 import com.yy.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.yy.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.yy.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.yy.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCountQueryRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.yy.shortlink.project.service.ShortLinkService;
 import com.yy.shortlink.project.util.HashUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBloomFilter;
 import org.springframework.dao.DuplicateKeyException;
@@ -23,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -81,6 +87,49 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         List<Map<String,Object>> shortLinkDoList = baseMapper.selectMaps(shortLinkDoQueryWrapper);
         return BeanUtil.copyToList(shortLinkDoList, ShortLinkCountQueryRespDTO.class);
 
+    }
+
+    @Override
+    public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDo> queryWrapper = Wrappers.lambdaQuery(ShortLinkDo.class)
+                .eq(ShortLinkDo::getFullShortUrl,requestParam.getFullShortUrl())
+                .eq(ShortLinkDo::getDelFlag,0)
+                .eq(ShortLinkDo::getEnableStatus,0);
+        ShortLinkDo hasShortLinkDo = baseMapper.selectOne(queryWrapper);
+        if (hasShortLinkDo == null){
+            throw new ClientException("ShortLink record not exists");
+        }
+        ShortLinkDo shortLinkDo = ShortLinkDo.builder()
+                .domain(hasShortLinkDo.getDomain())
+                .shortUri(hasShortLinkDo.getShortUri())
+                .clickNum(hasShortLinkDo.getClickNum())
+                .favicon(hasShortLinkDo.getFavicon())
+                .createdType(hasShortLinkDo.getCreatedType())
+                .gid(requestParam.getGid())
+                .originUrl(requestParam.getOriginUrl())
+                .describe(requestParam.getDescribe())
+                .validDateType(requestParam.getValidDateType())
+                .validDate(requestParam.getValidDate())
+                .build();
+
+        if(Objects.equals(hasShortLinkDo.getGid(),requestParam.getGid())){
+            LambdaUpdateWrapper<ShortLinkDo> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDo.class)
+                    .eq(ShortLinkDo::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDo::getGid, requestParam.getGid())
+                    .eq(ShortLinkDo::getDelFlag, 0)
+                    .eq(ShortLinkDo::getEnableStatus, 0)
+                    .set(Objects.equals(requestParam.getValidDateType(), ValidDateTypeEnum.PERMANENT.getType()), ShortLinkDo::getValidDate, null);
+            baseMapper.update(shortLinkDo,updateWrapper);
+        }else {
+            LambdaUpdateWrapper<ShortLinkDo> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDo.class)
+                    .eq(ShortLinkDo::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDo::getGid, hasShortLinkDo.getGid())
+                    .eq(ShortLinkDo::getDelFlag, 0)
+                    .eq(ShortLinkDo::getEnableStatus, 0);
+            baseMapper.delete(updateWrapper);
+            baseMapper.insert(shortLinkDo);
+
+        }
     }
 
     private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
