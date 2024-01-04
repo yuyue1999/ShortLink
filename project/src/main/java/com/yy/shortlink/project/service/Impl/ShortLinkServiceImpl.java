@@ -24,6 +24,7 @@ import com.yy.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.yy.shortlink.project.service.ShortLinkService;
 import com.yy.shortlink.project.util.HashUtil;
+import com.yy.shortlink.project.util.LinkUtil;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,9 +39,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
 @Service
@@ -76,6 +79,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }catch (DuplicateKeyException e){
             throw new ServiceException("repetitive shortLink");
         }
+        stringRedisTemplate.opsForValue()
+                .set(String.format(RedisKeyConstant.GOTO_SHORT_LINK_KEY,fullShortUrl),requestParam.getOriginUrl(), LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()),TimeUnit.MILLISECONDS);
 
         shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
 
@@ -161,6 +166,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ((HttpServletResponse)response).sendRedirect(cachedLink);
             return;
         }
+
+        boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullshortUrl);
+        if (!contains){
+            ((HttpServletResponse)response).sendRedirect("/page/notfound");
+            return;
+        }
+        String sentinal = stringRedisTemplate.opsForValue().get(String.format(RedisKeyConstant.GOTO_IS_NULL_SHORT_LINK_KEY, fullshortUrl));
+        if (StrUtil.isNotBlank(sentinal)){
+            ((HttpServletResponse)response).sendRedirect("/page/notfound");
+            return;
+        }
         RLock lock = redissonClient.getLock(String.format(RedisKeyConstant.LOCK_GOTO_SHORT_LINK_KEY,fullshortUrl));
         lock.lock();
         try{
@@ -174,6 +190,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoDOLambdaQueryWrapper);
             if (shortLinkGotoDO == null) {
                 //TODO
+                stringRedisTemplate.opsForValue().set(String.format(RedisKeyConstant.GOTO_IS_NULL_SHORT_LINK_KEY, fullshortUrl),"-",30, TimeUnit.MINUTES);
+                ((HttpServletResponse)response).sendRedirect("/page/notfound");
                 return;
             }
             LambdaQueryWrapper<ShortLinkDo> queryWrapper = Wrappers.lambdaQuery(ShortLinkDo.class).eq(ShortLinkDo::getGid, shortLinkGotoDO.getGid())
@@ -182,7 +200,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDo::getEnableStatus, 0);
             ShortLinkDo shortLinkDo = baseMapper.selectOne(queryWrapper);
             if (shortLinkDo != null) {
-                stringRedisTemplate.opsForValue().set(String.format(RedisKeyConstant.GOTO_SHORT_LINK_KEY,fullshortUrl),shortLinkDo.getOriginUrl());
+                if (shortLinkDo.getValidDate() !=null && shortLinkDo.getValidDate().before(new Date())){
+                    //TODO: the best solution is to update to database about the old shortlink;
+                    //TODO: the following is just a temporary way to solve;
+                    stringRedisTemplate.opsForValue().set(String.format(RedisKeyConstant.GOTO_IS_NULL_SHORT_LINK_KEY, fullshortUrl),"-",30, TimeUnit.MINUTES);
+                    ((HttpServletResponse)response).sendRedirect("/page/notfound");
+                    return;
+                }
+                stringRedisTemplate.opsForValue().set(String.format(RedisKeyConstant.GOTO_SHORT_LINK_KEY,fullshortUrl),shortLinkDo.getOriginUrl(),LinkUtil.getLinkCacheValidTime(shortLinkDo.getValidDate()),TimeUnit.MILLISECONDS);
                 ((HttpServletResponse)response).sendRedirect(shortLinkDo.getOriginUrl());
             }
         }finally {
