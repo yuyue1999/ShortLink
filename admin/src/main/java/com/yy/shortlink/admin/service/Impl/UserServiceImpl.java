@@ -15,6 +15,7 @@ import com.yy.shortlink.admin.dto.req.UserUpdateReqDto;
 
 import com.yy.shortlink.admin.dto.resp.UserLoginRespDto;
 import com.yy.shortlink.admin.dto.resp.UserRespDto;
+import com.yy.shortlink.admin.service.GroupService;
 import com.yy.shortlink.admin.service.UserService;
 import com.yy.shortlink.admin.common.convention.exception.ClientException;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RedissonClient redissonClient;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final GroupService groupService;
     @Override
     public UserRespDto getUserbyUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername,username);
@@ -77,6 +80,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 }
 
                 userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+                groupService.saveGroup(requestParam.getUsername(),"defaultGroup");
             }else {
                 throw new ClientException(BaseErrorCode.USER_NAME_EXIST_ERROR);
             }
@@ -85,6 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }finally {
             lock.unlock();
         }
+
 
     }
 

@@ -12,6 +12,7 @@ import java.util.List;
 public interface GroupService extends IService<GroupDO> {
 
     void saveGroup(String groupName);
+    void saveGroup(String userName,String groupName);
 
     List<ShortLinkGroupResDto> listGroup();
 

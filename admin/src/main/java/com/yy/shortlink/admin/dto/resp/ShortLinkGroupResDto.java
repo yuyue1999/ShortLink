@@ -1,5 +1,8 @@
 package com.yy.shortlink.admin.dto.resp;
 
+import lombok.Data;
+
+@Data
 public class ShortLinkGroupResDto {
     /**
      * 分组标识
