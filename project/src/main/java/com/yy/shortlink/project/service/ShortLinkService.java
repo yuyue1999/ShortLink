@@ -10,8 +10,13 @@ import com.yy.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCountQueryRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface ShortLinkService extends IService<ShortLinkDo> {
@@ -23,4 +28,7 @@ public interface ShortLinkService extends IService<ShortLinkDo> {
     List<ShortLinkCountQueryRespDTO> listGroupShortLinkCount(List<String> requestParam);
 
     void updateShortLink(ShortLinkUpdateReqDTO requestParam);
+
+    void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;
+
 }

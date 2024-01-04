@@ -51,12 +51,19 @@ public class UserTableTest {
             "  PRIMARY KEY (`id`),\n" +
             "  UNIQUE KEY `idx_unique_username_gid` (`gid`,`username`) USING BTREE\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+    private static String goto_table = "CREATE TABLE `t_link_goto_%d` (\n" +
+            "  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',\n" +
+            "  `gid` varchar(32) DEFAULT NULL COMMENT '分组标识',\n" +
+            "  `full_short_url` varchar(128) DEFAULT NULL COMMENT '完整短链接',\n" +
+            "  PRIMARY KEY (`id`)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     public static void main(String[] args) {
 
 
         for(int i=0;i<16;i++){
 
-            System.out.printf((group_table) + "%n",i);
+            System.out.printf((goto_table) + "%n",i);
         }
 
     }
