@@ -5,12 +5,16 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.yy.shortlink.admin.common.convention.result.Result;
+import com.yy.shortlink.admin.common.convention.result.Results;
+import com.yy.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
 import com.yy.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.yy.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import com.yy.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import com.yy.shortlink.admin.remote.dto.resp.ShortLinkCountQueryRespDTO;
 import com.yy.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.yy.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,5 +56,16 @@ public interface ShortLinkRemoteService {
         String resultBodyStr = HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/update", JSON.toJSONString(requestParam));
 
     }
+
+    default Result<String> getTitleByUrl(@RequestParam("url") String url) {
+        String resultStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/title?url=" + url);
+        return JSON.parseObject(resultStr, new TypeReference<>() {
+        });
+    }
+
+    default void saveRecycleBin( RecycleBinSaveReqDTO requestParam){
+        String resultBodyStr = HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/save", JSON.toJSONString(requestParam));
+    }
+
 
 }
