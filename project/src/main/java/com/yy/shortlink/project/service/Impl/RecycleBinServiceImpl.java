@@ -1,16 +1,27 @@
 package com.yy.shortlink.project.service.Impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yy.shortlink.project.common.constant.RedisKeyConstant;
 import com.yy.shortlink.project.dao.entity.ShortLinkDo;
 import com.yy.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.yy.shortlink.project.dto.req.RecycleBinSaveReqDTO;
+import com.yy.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.yy.shortlink.project.service.RecycleBinService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+@RequiredArgsConstructor
 @Service
 public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDo> implements RecycleBinService {
+
+    private final StringRedisTemplate stringRedisTemplate;
     @Override
     public void saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
         LambdaUpdateWrapper<ShortLinkDo> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDo.class)
@@ -22,5 +33,16 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .enableStatus(1)
                 .build();
         baseMapper.update(shortLinkDo,updateWrapper);
+        stringRedisTemplate.delete(String.format(RedisKeyConstant.GOTO_SHORT_LINK_KEY,requestParam.getFullShortUrl()));
+    }
+
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDo> queryWrapper = Wrappers.lambdaQuery(ShortLinkDo.class)
+                .eq(ShortLinkDo::getGid, requestParam.getGid())
+                .eq(ShortLinkDo::getEnableStatus, 1)
+                .eq(ShortLinkDo::getDelFlag, 0);
+        IPage<ShortLinkDo> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
+        return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
     }
 }
