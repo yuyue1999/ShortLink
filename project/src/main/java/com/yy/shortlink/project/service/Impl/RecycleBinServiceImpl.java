@@ -11,6 +11,7 @@ import com.yy.shortlink.project.dao.entity.ShortLinkDo;
 import com.yy.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.yy.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.yy.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.yy.shortlink.project.dto.req.ShortLinkRecyclePageReqDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.yy.shortlink.project.service.RecycleBinService;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,9 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
     }
 
     @Override
-    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
+    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkRecyclePageReqDTO requestParam) {
         LambdaQueryWrapper<ShortLinkDo> queryWrapper = Wrappers.lambdaQuery(ShortLinkDo.class)
-                .eq(ShortLinkDo::getGid, requestParam.getGid())
+                .in(ShortLinkDo::getGid, requestParam.getGidList())
                 .eq(ShortLinkDo::getEnableStatus, 1)
                 .eq(ShortLinkDo::getDelFlag, 0);
         IPage<ShortLinkDo> resultPage = baseMapper.selectPage(requestParam, queryWrapper);

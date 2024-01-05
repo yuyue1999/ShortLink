@@ -5,6 +5,7 @@ import com.yy.shortlink.project.common.convention.result.Result;
 import com.yy.shortlink.project.common.convention.result.Results;
 import com.yy.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.yy.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.yy.shortlink.project.dto.req.ShortLinkRecyclePageReqDTO;
 import com.yy.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.yy.shortlink.project.service.RecycleBinService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class RecycleBinController {
     }
 
     @GetMapping("api/short-link/v1/recycle-bin/page")
-    public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO requestParam){
+    public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkRecyclePageReqDTO requestParam){
         return Results.success(recycleBinService.pageShortLink(requestParam));
     }
 }
